@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>fuel.trackmate.page — Pakistan Fuel Price API</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230a0c0f'/%3E%3Cpath d='M9 26V10a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v16' stroke='%23a78bfa' stroke-width='2' fill='none'/%3E%3Cpath d='M9 16h10' stroke='%23a78bfa' stroke-width='2'/%3E%3Cpath d='M19 12l3.2 2.2a2 2 0 0 1 .8 1.6V22a1.8 1.8 0 0 0 3.6 0v-5' stroke='%23a78bfa' stroke-width='2' fill='none' stroke-linecap='round'/%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #0a0c0f;
+    --panel: #13161a;
+    --panel-2: #191d22;
+    --border: #23272e;
+    --border-soft: #1b1f25;
+    --text: #e8eaed;
+    --muted: #8b95a1;
+    --muted-2: #5f6a76;
+    --accent: #a78bfa;
+    --accent-dim: rgba(167, 139, 250, 0.12);
+    --code-bg: #0f1215;
+    --radius: 10px;
+    --pso: #f6c453;
+    --shell: #fbce07;
+    --pakwheels: #4d9fec;
+  }
+  * { box-sizing: border-box; }
+  ::selection { background: var(--accent-dim); color: var(--accent); }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image: radial-gradient(ellipse 900px 500px at 50% -10%, rgba(167, 139, 250, 0.08), transparent);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, sans-serif;
+    line-height: 1.55;
+    font-size: 15.5px;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 0 20px 80px; }
+
+  /* Top nav */
+  nav.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    backdrop-filter: blur(10px);
+    background: rgba(10, 12, 15, 0.75);
+    border-bottom: 1px solid var(--border-soft);
+  }
+  nav.topbar .inner {
+    max-width: 880px;
+    margin: 0 auto;
+    padding: 14px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  nav.topbar .brand {
+    font-weight: 600;
+    font-size: 0.92rem;
+    color: var(--text);
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  nav.topbar .brand .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  nav.topbar .links { display: flex; align-items: center; gap: 20px; }
+  nav.topbar .links a { color: var(--muted); text-decoration: none; font-size: 0.85rem; transition: color 0.15s; }
+  nav.topbar .links a:hover { color: var(--text); }
+  nav.topbar .icon-link { display: flex; color: var(--muted); transition: color 0.15s; }
+  nav.topbar .icon-link:hover { color: var(--text); }
+  nav.topbar .icon-link svg { width: 19px; height: 19px; }
+
+  header.hero { padding: 56px 0 8px; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.72rem;
+    font-weight: 500;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(167, 139, 250, 0.25);
+    border-radius: 999px;
+    padding: 4px 12px;
+    margin-bottom: 16px;
+  }
+  h1 { font-size: 1.9rem; margin: 0 0 10px; letter-spacing: -0.02em; }
+  .sub { color: var(--muted); margin: 0 0 4px; max-width: 60ch; }
+  .updated-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--muted-2);
+    font-size: 0.85rem;
+    margin-top: 18px;
+  }
+  .updated-row .live-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+  .updated-row strong { color: var(--muted); font-weight: 500; }
+
+  section { margin-top: 52px; scroll-margin-top: 70px; }
+  h2 {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin: 0 0 16px;
+  }
+  .section-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+  .section-head h2 { margin-bottom: 0; }
+  .copy-docs-btn {
+    display: inline-flex; align-items: center; gap: 7px;
+    background: var(--panel); border: 1px solid var(--border);
+    color: var(--muted); font-family: inherit; font-size: 0.78rem; font-weight: 500;
+    padding: 7px 12px; border-radius: 8px; cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .copy-docs-btn svg { width: 13px; height: 13px; flex-shrink: 0; }
+  .copy-docs-btn:hover { color: var(--text); border-color: var(--muted-2); }
+  .copy-docs-btn.copied { color: var(--accent); border-color: rgba(167, 139, 250, 0.35); }
+
+  /* Prices toolbar + table */
+  .toolbar { display: flex; gap: 10px; margin-bottom: 14px; flex-wrap: wrap; }
+  .toolbar input[type="search"] {
+    flex: 1 1 200px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    padding: 9px 12px;
+    border-radius: 8px;
+    font-size: 0.88rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .toolbar input[type="search"]::placeholder { color: var(--muted-2); }
+  .toolbar input[type="search"]:focus { border-color: var(--accent); }
+  .chip-group { display: flex; gap: 6px; flex-wrap: wrap; }
+  .chip {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.8rem;
+    padding: 8px 13px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.15s;
+    user-select: none;
+  }
+  .chip:hover { border-color: var(--muted-2); color: var(--text); }
+  .chip.active { background: var(--accent-dim); border-color: rgba(167, 139, 250, 0.35); color: var(--accent); }
+
+  .table-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .table-scroll { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; min-width: 560px; }
+  th, td { text-align: left; padding: 11px 16px; border-bottom: 1px solid var(--border-soft); white-space: nowrap; }
+  thead th {
+    color: var(--muted-2);
+    font-weight: 500;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    background: var(--panel-2);
+    cursor: pointer;
+    user-select: none;
+    position: sticky;
+    top: 0;
+  }
+  thead th:hover { color: var(--muted); }
+  thead th .arrow { opacity: 0; margin-left: 4px; font-size: 0.7em; }
+  thead th.sorted .arrow { opacity: 1; color: var(--accent); }
+  tbody tr { transition: background 0.1s; }
+  tbody tr:hover { background: var(--panel-2); }
+  tbody tr:last-child td { border-bottom: none; }
+  td.price { font-variant-numeric: tabular-nums; text-align: right; color: var(--text); font-weight: 500; }
+  th:last-child, td.price { text-align: right; }
+  .src-tag { display: inline-flex; align-items: center; gap: 7px; font-weight: 500; }
+  .src-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .src-dot.pso { background: var(--pso); }
+  .src-dot.shell { background: var(--shell); }
+  .src-dot.pakwheels { background: var(--pakwheels); }
+  .muted { color: var(--muted); font-size: 0.85rem; }
+  .empty-row td { padding: 40px 16px; text-align: center; color: var(--muted-2); }
+  .row-count { color: var(--muted-2); font-size: 0.78rem; margin-top: 10px; display: flex; justify-content: space-between; gap: 12px; }
+  .row-count button {
+    background: none; border: none; color: var(--accent); font-size: 0.78rem; cursor: pointer; padding: 0; font-family: inherit;
+  }
+  .city-toggle {
+    display: inline-flex; align-items: center; gap: 5px;
+    background: var(--panel-2); border: 1px solid var(--border);
+    color: var(--muted); font-size: 0.8rem; padding: 3px 9px; border-radius: 999px;
+    cursor: pointer; transition: all 0.15s; white-space: nowrap;
+  }
+  .city-toggle:hover { color: var(--text); border-color: var(--muted-2); }
+  .city-toggle .caret { font-size: 0.65em; transition: transform 0.15s; }
+  .city-toggle.open .caret { transform: rotate(180deg); }
+  tr.city-detail td { background: var(--panel-2); white-space: normal; padding: 12px 16px; }
+  tr.city-detail .city-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  tr.city-detail .city-list span {
+    background: var(--code-bg); border: 1px solid var(--border-soft); color: var(--muted);
+    font-size: 0.78rem; padding: 3px 9px; border-radius: 6px;
+  }
+
+  /* API docs */
+  .endpoint {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+    margin-bottom: 14px;
+  }
+  .endpoint-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .method {
+    display: inline-block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    color: #1e1533;
+    background: var(--accent);
+    border-radius: 4px;
+    padding: 2px 7px;
+  }
+  .endpoint code.path { font-size: 0.9rem; color: var(--text); background: rgba(255, 255, 255, 0.06); }
+  .endpoint p.muted { margin: 6px 0 12px; }
+  code, pre { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.83rem; }
+  /* Inline code as a plain tint, not a bordered pill — a paragraph with several
+     of these (":source", "days", "429"...) turned into a wall of boxes otherwise. */
+  code { background: rgba(255, 255, 255, 0.055); color: #c3cbd4; padding: 1px 5px; border-radius: 4px; }
+  .snippet { position: relative; }
+
+  .tabs { display: flex; gap: 4px; margin: 10px 0 -1px; position: relative; z-index: 1; }
+  .tab-btn {
+    background: none; border: none; color: var(--muted-2);
+    font-family: inherit; font-size: 0.78rem; font-weight: 500;
+    padding: 6px 4px; cursor: pointer; border-bottom: 2px solid transparent;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .tab-btn:hover { color: var(--text); }
+  .tab-btn.active { color: var(--accent); border-color: var(--accent); }
+  .tab-panel[hidden] { display: none; }
+
+  .status-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .status-chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.74rem; padding: 3px 9px; border-radius: 6px;
+    background: var(--code-bg); border: 1px solid var(--border-soft); color: var(--muted);
+  }
+  .status-chip .code { font-weight: 700; font-family: ui-monospace, monospace; }
+  .status-chip.ok .code { color: var(--accent); }
+  .status-chip.warn .code { color: #f6c453; }
+  .status-chip.err .code { color: #f2555a; }
+  pre {
+    background: var(--code-bg);
+    border: 1px solid var(--border-soft);
+    border-radius: 8px;
+    padding: 13px 15px;
+    padding-right: 60px;
+    overflow-x: auto;
+    margin: 0;
+    color: #c9d1d9;
+  }
+  .copy-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    font-size: 0.72rem;
+    padding: 4px 9px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .copy-btn:hover { color: var(--text); border-color: var(--muted-2); }
+  .copy-btn.copied { color: var(--accent); border-color: rgba(167, 139, 250, 0.35); }
+
+  .info-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 18px 20px;
+  }
+  .info-card p { margin: 0 0 10px; color: var(--muted); }
+  .info-card p:last-child { margin-bottom: 0; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  footer { margin-top: 64px; padding-top: 24px; border-top: 1px solid var(--border-soft); color: var(--muted-2); font-size: 0.8rem; }
+
+  @media (max-width: 560px) {
+    header.hero { padding: 40px 0 4px; }
+    h1 { font-size: 1.55rem; }
+    nav.topbar .links { gap: 12px; }
+    section { margin-top: 40px; }
+    th, td { padding: 10px 12px; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="topbar">
+  <div class="inner">
+    <a href="#" class="brand"><span class="dot"></span>fuel.trackmate.page</a>
+    <div class="links">
+      <a href="#prices">Prices</a>
+      <a href="#docs">API docs</a>
+      <a href="#about">About</a>
+      <a href="https://github.com/KashifKhn/fuel-api" target="_blank" rel="noopener" class="icon-link" aria-label="GitHub repository">
+        <svg viewBox="0 0 16 16" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="wrap">
+  <header class="hero">
+    <span class="badge">open source · unofficial</span>
+    <h1>Pakistan fuel prices, as an API</h1>
+    <p class="sub">A free, public API for fuel prices in Pakistan, aggregated from PSO, Shell, and PakWheels. There's no official government API for this — so we built one.</p>
+    <div class="updated-row">
+      <span class="live-dot"></span>
+      Last updated: <strong id="last-updated">__LAST_UPDATED__</strong>
+    </div>
+  </header>
+
+  <section id="prices">
+    <h2>Current prices</h2>
+    <div class="toolbar">
+      <input type="search" id="search" placeholder="Filter by product or city…" />
+      <div class="chip-group" id="source-chips">
+        <span class="chip active" data-source="">All sources</span>
+        <span class="chip" data-source="pso">PSO</span>
+        <span class="chip" data-source="shell">Shell</span>
+        <span class="chip" data-source="pakwheels">PakWheels</span>
+      </div>
+    </div>
+    <div class="table-card">
+      <div class="table-scroll">
+        <table id="price-table">
+          <thead>
+            <tr>
+              <th data-key="source">Source<span class="arrow">▾</span></th>
+              <th data-key="product">Product<span class="arrow">▾</span></th>
+              <th data-key="city">City<span class="arrow">▾</span></th>
+              <th data-key="price_pkr">Price<span class="arrow">▾</span></th>
+              <th data-key="scraped_at">Scraped at<span class="arrow">▾</span></th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+    <p class="row-count" id="row-count"></p>
+  </section>
+
+  <section id="docs">
+    <div class="section-head">
+      <h2>API docs</h2>
+      <button class="copy-docs-btn" id="copy-docs">
+        <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="5" y="5" width="9" height="9" rx="1.5"/><path d="M3.5 11H2.8A1.3 1.3 0 0 1 1.5 9.7V2.3A1.3 1.3 0 0 1 2.8 1h7.4a1.3 1.3 0 0 1 1.3 1.3v.7"/></svg>
+        Copy docs for AI
+      </button>
+    </div>
+    <p class="muted" style="margin-bottom: 20px;">Base URL: <code>https://fuel.trackmate.page/api</code>. Public, no API key needed. Rate limited to keep it fair for everyone — see below. Paste "Copy docs for AI" into an LLM/agent to give it full context on this API.</p>
+
+    <div class="endpoint">
+      <div class="endpoint-head"><span class="method">GET</span><code class="path">/api/prices</code></div>
+      <p class="muted">Latest known price for every source/product/city combination.</p>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="curl">cURL</button>
+        <button class="tab-btn" data-tab="response">Response</button>
+      </div>
+      <div class="snippet tab-panel" data-panel="curl">
+        <pre>curl https://fuel.trackmate.page/api/prices</pre>
+        <button class="copy-btn" data-copy="curl https://fuel.trackmate.page/api/prices">Copy</button>
+      </div>
+      <div class="snippet tab-panel" data-panel="response" hidden>
+        <pre>{
+  "count": 2,
+  "prices": [
+    { "source": "pso", "product": "petrol", "price_pkr": 299.5, "unit": "litre", "city": null, "effective_date": null, "scraped_at": "2026-07-04T16:21:28.663Z" },
+    { "source": "shell", "product": "hsd", "price_pkr": 309.5, "unit": "litre", "city": null, "effective_date": null, "scraped_at": "2026-07-04T16:21:28.663Z" }
+  ]
+}</pre>
+        <button class="copy-btn" data-copy='{"count":2,"prices":[{"source":"pso","product":"petrol","price_pkr":299.5,"unit":"litre","city":null,"effective_date":null,"scraped_at":"2026-07-04T16:21:28.663Z"},{"source":"shell","product":"hsd","price_pkr":309.5,"unit":"litre","city":null,"effective_date":null,"scraped_at":"2026-07-04T16:21:28.663Z"}]}'>Copy</button>
+      </div>
+      <div class="status-row">
+        <span class="status-chip ok"><span class="code">200</span> OK</span>
+        <span class="status-chip warn"><span class="code">429</span> rate_limited</span>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-head"><span class="method">GET</span><code class="path">/api/prices/:source</code></div>
+      <p class="muted">Latest prices from one source only. <code>:source</code> is one of <code>pso</code>, <code>shell</code>, <code>pakwheels</code>.</p>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="curl">cURL</button>
+        <button class="tab-btn" data-tab="response">Response</button>
+      </div>
+      <div class="snippet tab-panel" data-panel="curl">
+        <pre>curl https://fuel.trackmate.page/api/prices/pso</pre>
+        <button class="copy-btn" data-copy="curl https://fuel.trackmate.page/api/prices/pso">Copy</button>
+      </div>
+      <div class="snippet tab-panel" data-panel="response" hidden>
+        <pre>{
+  "count": 2,
+  "prices": [
+    { "source": "pso", "product": "petrol", "price_pkr": 299.5, "unit": "litre", "city": null, "effective_date": null, "scraped_at": "2026-07-04T16:21:28.663Z" },
+    { "source": "pso", "product": "octane_plus", "price_pkr": 340, "unit": "litre", "city": "Karachi", "effective_date": null, "scraped_at": "2026-07-04T16:21:28.663Z" }
+  ]
+}</pre>
+        <button class="copy-btn" data-copy='{"count":2,"prices":[{"source":"pso","product":"petrol","price_pkr":299.5,"unit":"litre","city":null,"effective_date":null,"scraped_at":"2026-07-04T16:21:28.663Z"},{"source":"pso","product":"octane_plus","price_pkr":340,"unit":"litre","city":"Karachi","effective_date":null,"scraped_at":"2026-07-04T16:21:28.663Z"}]}'>Copy</button>
+      </div>
+      <div class="status-row">
+        <span class="status-chip ok"><span class="code">200</span> OK</span>
+        <span class="status-chip err"><span class="code">400</span> invalid_source</span>
+        <span class="status-chip warn"><span class="code">429</span> rate_limited</span>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-head"><span class="method">GET</span><code class="path">/api/history?product=petrol&days=30</code></div>
+      <p class="muted">Historical snapshots. <code>product</code> and <code>source</code> are optional filters; <code>days</code> defaults to 30, max 365.</p>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="curl">cURL</button>
+        <button class="tab-btn" data-tab="response">Response</button>
+      </div>
+      <div class="snippet tab-panel" data-panel="curl">
+        <pre>curl "https://fuel.trackmate.page/api/history?product=hsd&days=90"</pre>
+        <button class="copy-btn" data-copy='curl "https://fuel.trackmate.page/api/history?product=hsd&days=90"'>Copy</button>
+      </div>
+      <div class="snippet tab-panel" data-panel="response" hidden>
+        <pre>{
+  "count": 2,
+  "days": 1,
+  "prices": [
+    { "source": "pso", "product": "petrol", "price_pkr": 299.5, "unit": "litre", "city": null, "effective_date": null, "scraped_at": "2026-07-04T16:18:48.887Z" },
+    { "source": "pakwheels", "product": "petrol", "price_pkr": 297.53, "unit": "litre", "city": null, "effective_date": "04-July-2026", "scraped_at": "2026-07-04T16:18:49.736Z" }
+  ]
+}</pre>
+        <button class="copy-btn" data-copy='{"count":2,"days":1,"prices":[{"source":"pso","product":"petrol","price_pkr":299.5,"unit":"litre","city":null,"effective_date":null,"scraped_at":"2026-07-04T16:18:48.887Z"},{"source":"pakwheels","product":"petrol","price_pkr":297.53,"unit":"litre","city":null,"effective_date":"04-July-2026","scraped_at":"2026-07-04T16:18:49.736Z"}]}'>Copy</button>
+      </div>
+      <div class="status-row">
+        <span class="status-chip ok"><span class="code">200</span> OK</span>
+        <span class="status-chip err"><span class="code">400</span> invalid_source</span>
+        <span class="status-chip warn"><span class="code">429</span> rate_limited</span>
+      </div>
+    </div>
+
+    <div class="endpoint">
+      <div class="endpoint-head"><span class="method">GET</span><code class="path">/api/health</code></div>
+      <p class="muted">Scraper status — when it last ran and which sources succeeded/failed.</p>
+      <div class="tabs">
+        <button class="tab-btn active" data-tab="curl">cURL</button>
+        <button class="tab-btn" data-tab="response">Response</button>
+      </div>
+      <div class="snippet tab-panel" data-panel="curl">
+        <pre>curl https://fuel.trackmate.page/api/health</pre>
+        <button class="copy-btn" data-copy="curl https://fuel.trackmate.page/api/health">Copy</button>
+      </div>
+      <div class="snippet tab-panel" data-panel="response" hidden>
+        <pre>{
+  "status": "ok",
+  "last_scrape": {
+    "ran_at": "2026-07-04T16:21:37.862Z",
+    "ok_sources": ["shell", "pakwheels", "pso"],
+    "failed_sources": []
+  }
+}</pre>
+        <button class="copy-btn" data-copy='{"status":"ok","last_scrape":{"ran_at":"2026-07-04T16:21:37.862Z","ok_sources":["shell","pakwheels","pso"],"failed_sources":[]}}'>Copy</button>
+      </div>
+      <div class="status-row">
+        <span class="status-chip ok"><span class="code">200</span> OK</span>
+        <span class="status-chip warn"><span class="code">429</span> rate_limited</span>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <p><strong style="color: var(--text);">Rate limits:</strong> ~60 requests/minute per IP, with a small burst allowance. Exceeding it returns <code>429</code> with a <code>Retry-After</code> header. Please cache responses client-side — prices only change a few times a month.</p>
+    </div>
+  </section>
+
+  <section id="about">
+    <h2>About the data</h2>
+    <div class="info-card">
+      <p>
+        Prices are scraped periodically from public pages on
+        <a href="https://psopk.com" target="_blank" rel="noopener">psopk.com</a>,
+        <a href="https://www.shell.com.pk" target="_blank" rel="noopener">shell.com.pk</a>, and
+        <a href="https://www.pakwheels.com/petroleum-prices-in-pakistan" target="_blank" rel="noopener">pakwheels.com</a>.
+        This is an independent, unofficial aggregation — not affiliated with OGRA, PSO, Shell, or PakWheels.
+        Always confirm at the pump for anything time-sensitive.
+      </p>
+      <p>Source code: <a href="https://github.com/KashifKhn/fuel-api" target="_blank" rel="noopener">github.com/KashifKhn/fuel-api</a> — issues and PRs welcome.</p>
+    </div>
+  </section>
+
+  <footer>fuel.trackmate.page · part of the TrackMate project</footer>
+</div>
+
+<script>
+  const allPrices = __PRICES_JSON__;
+  const tbody = document.querySelector("#price-table tbody");
+  const rowCountEl = document.getElementById("row-count");
+  const searchEl = document.getElementById("search");
+  const chipsEl = document.getElementById("source-chips");
+  const theadEl = document.querySelector("#price-table thead");
+
+  const productLabels = {
+    petrol: "Petrol", octane_plus: "Octane+", hsd: "High Speed Diesel",
+    lsd: "Light Speed Diesel", lpg: "LPG", kerosene: "Kerosene",
+  };
+  const sourceLabels = { pso: "PSO", shell: "Shell", pakwheels: "PakWheels" };
+
+  let state = { search: "", source: "", sortKey: "source", sortDir: 1, expanded: new Set() };
+
+  function groupKey(p) {
+    return `${p.source}|${p.product}|${p.price_pkr}|${p.unit}`;
+  }
+
+  function render() {
+    const filtered = allPrices.filter((p) => {
+      if (state.source && p.source !== state.source) return false;
+      if (state.search) {
+        const hay = `${p.product} ${p.city ?? ""} ${sourceLabels[p.source] ?? p.source}`.toLowerCase();
+        if (!hay.includes(state.search.toLowerCase())) return false;
+      }
+      return true;
+    });
+
+    // Same source+product+price across many cities (PSO posts one octane price
+    // nationwide) reads as noisy duplicate rows — collapse those into a single
+    // row with an expandable city list. A search narrows intent to a specific
+    // row, so skip grouping while searching.
+    const grouped = !state.search.trim();
+    let groups;
+    if (grouped) {
+      const map = new Map();
+      for (const p of filtered) {
+        const key = groupKey(p);
+        if (!map.has(key)) map.set(key, { ...p, key, cities: [] });
+        if (p.city) map.get(key).cities.push(p.city);
+      }
+      groups = [...map.values()];
+      for (const g of groups) g.cities.sort();
+    } else {
+      groups = filtered.map((p) => ({ ...p, key: `${groupKey(p)}|${p.city}`, cities: p.city ? [p.city] : [] }));
+    }
+
+    groups.sort((a, b) => {
+      let av, bv;
+      if (state.sortKey === "city") {
+        av = a.cities.length > 1 ? `zz_${String(a.cities.length).padStart(4, "0")}` : (a.cities[0] || "");
+        bv = b.cities.length > 1 ? `zz_${String(b.cities.length).padStart(4, "0")}` : (b.cities[0] || "");
+      } else {
+        av = a[state.sortKey];
+        bv = b[state.sortKey];
+      }
+      let cmp;
+      if (typeof av === "number" || typeof bv === "number") cmp = (av ?? 0) - (bv ?? 0);
+      else cmp = String(av ?? "").localeCompare(String(bv ?? ""));
+      return cmp * state.sortDir;
+    });
+
+    theadEl.querySelectorAll("th").forEach((th) => {
+      th.classList.toggle("sorted", th.dataset.key === state.sortKey);
+      th.querySelector(".arrow").textContent = state.sortDir === 1 ? "▾" : "▴";
+    });
+
+    tbody.innerHTML = "";
+    if (groups.length === 0) {
+      tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No matching prices.</td></tr>';
+    } else {
+      for (const g of groups) {
+        const tr = document.createElement("tr");
+        const unit = g.unit === "kg" ? "/kg" : "/L";
+        const isGroup = g.cities.length > 1;
+        const isOpen = state.expanded.has(g.key);
+        const cityCell = isGroup
+          ? `<span class="city-toggle${isOpen ? " open" : ""}" data-key="${g.key}">${g.cities.length} cities <span class="caret">▾</span></span>`
+          : (g.cities[0] || "—");
+        tr.innerHTML = `
+          <td><span class="src-tag"><span class="src-dot ${g.source}"></span>${sourceLabels[g.source] ?? g.source}</span></td>
+          <td>${productLabels[g.product] ?? g.product}</td>
+          <td>${cityCell}</td>
+          <td class="price">Rs. ${Number(g.price_pkr).toFixed(2)}${unit}</td>
+          <td class="muted">${new Date(g.scraped_at).toLocaleString()}</td>
+        `;
+        tbody.appendChild(tr);
+
+        if (isGroup && isOpen) {
+          const detail = document.createElement("tr");
+          detail.className = "city-detail";
+          detail.innerHTML = `<td colspan="5"><div class="city-list">${g.cities.map((c) => `<span>${c}</span>`).join("")}</div></td>`;
+          tbody.appendChild(detail);
+        }
+      }
+    }
+    rowCountEl.innerHTML = `<span>${groups.length} row${groups.length === 1 ? "" : "s"} shown (${allPrices.length} total)</span>`;
+  }
+
+  if (allPrices.length === 0) {
+    tbody.innerHTML = '<tr class="empty-row"><td colspan="5">No data yet — first scrape hasn\'t run.</td></tr>';
+  } else {
+    searchEl.addEventListener("input", (e) => { state.search = e.target.value; render(); });
+    chipsEl.addEventListener("click", (e) => {
+      const chip = e.target.closest(".chip");
+      if (!chip) return;
+      chipsEl.querySelectorAll(".chip").forEach((c) => c.classList.remove("active"));
+      chip.classList.add("active");
+      state.source = chip.dataset.source;
+      render();
+    });
+    theadEl.addEventListener("click", (e) => {
+      const th = e.target.closest("th");
+      if (!th) return;
+      const key = th.dataset.key;
+      if (state.sortKey === key) state.sortDir *= -1;
+      else { state.sortKey = key; state.sortDir = 1; }
+      render();
+    });
+    tbody.addEventListener("click", (e) => {
+      const toggle = e.target.closest(".city-toggle");
+      if (!toggle) return;
+      const key = toggle.dataset.key;
+      if (state.expanded.has(key)) state.expanded.delete(key);
+      else state.expanded.add(key);
+      render();
+    });
+    render();
+  }
+
+  document.querySelectorAll(".endpoint").forEach((endpoint) => {
+    const tabBtns = endpoint.querySelectorAll(".tab-btn");
+    tabBtns.forEach((btn) => {
+      btn.addEventListener("click", () => {
+        tabBtns.forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        endpoint.querySelectorAll(".tab-panel").forEach((panel) => {
+          panel.hidden = panel.dataset.panel !== btn.dataset.tab;
+        });
+      });
+    });
+  });
+
+  document.querySelectorAll(".copy-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      await navigator.clipboard.writeText(btn.dataset.copy);
+      btn.textContent = "Copied!";
+      btn.classList.add("copied");
+      setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("copied"); }, 1500);
+    });
+  });
+
+  // Built straight from the rendered DOM (not a hand-maintained duplicate string),
+  // so it can't drift from what's actually documented on the page.
+  function buildDocsMarkdown() {
+    const baseUrl = "https://fuel.trackmate.page/api";
+    let md = `# fuel.trackmate.page API\n\nFree, public API for fuel prices in Pakistan (PSO, Shell, PakWheels). Unofficial, no API key needed.\n\nBase URL: ${baseUrl}\n\n`;
+
+    document.querySelectorAll(".endpoint").forEach((endpoint) => {
+      const method = endpoint.querySelector(".method")?.textContent.trim();
+      const path = endpoint.querySelector(".path")?.textContent.trim();
+      const desc = endpoint.querySelector(":scope > p.muted")?.textContent.trim();
+      const curl = endpoint.querySelector('[data-panel="curl"] pre')?.textContent.trim();
+      const response = endpoint.querySelector('[data-panel="response"] pre')?.textContent.trim();
+      const statuses = [...endpoint.querySelectorAll(".status-chip")]
+        .map((chip) => `\`${chip.querySelector(".code").textContent}\` ${chip.textContent.replace(chip.querySelector(".code").textContent, "").trim()}`)
+        .join(", ");
+
+      md += `## ${method} ${path}\n\n${desc}\n\n**Request:**\n\`\`\`bash\n${curl}\n\`\`\`\n\n`;
+      if (response) md += `**Response:**\n\`\`\`json\n${response}\n\`\`\`\n\n`;
+      if (statuses) md += `**Status codes:** ${statuses}\n\n`;
+    });
+
+    md += `## Rate limits\n\n~60 requests/minute per IP, small burst allowance. 429 responses include a \`Retry-After\` header (seconds). Cache responses client-side — prices only change a few times a month.\n`;
+    return md;
+  }
+
+  const copyDocsBtn = document.getElementById("copy-docs");
+  copyDocsBtn.addEventListener("click", async () => {
+    await navigator.clipboard.writeText(buildDocsMarkdown());
+    const original = copyDocsBtn.innerHTML;
+    copyDocsBtn.textContent = "Copied!";
+    copyDocsBtn.classList.add("copied");
+    setTimeout(() => { copyDocsBtn.innerHTML = original; copyDocsBtn.classList.remove("copied"); }, 1500);
+  });
+</script>
+</body>
+</html>

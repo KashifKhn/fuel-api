@@ -1,0 +1,21 @@
+{
+  "name": "fuel-price-api",
+  "version": "0.1.0",
+  "description": "Open, public API for Pakistani fuel prices (PSO, Shell, PakWheels/OGRA), aggregated and normalized.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "bun run --watch src/server.ts",
+    "start": "bun run src/server.ts",
+    "scrape": "bun run scripts/scrape-once.ts",
+    "db:migrate": "bun run scripts/migrate.ts"
+  },
+  "dependencies": {
+    "@libsql/client": "^0.14.0",
+    "cheerio": "^1.0.0",
+    "hono": "^4.6.14"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
