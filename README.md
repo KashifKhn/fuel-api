@@ -23,9 +23,7 @@ showing current prices and live docs.
 - [API reference](#api-reference)
 - [Rate limiting](#rate-limiting)
 - [Project structure](#project-structure)
-- [How scraping works](#how-scraping-works)
 - [Local development](#local-development)
-- [Deploying to Heroku](#deploying-to-heroku)
 - [Ethics / etiquette](#ethics--etiquette)
 - [Contributing](#contributing)
 - [License](#license)
@@ -50,8 +48,24 @@ curl https://fuel.trackmate.page/api/prices
 {
   "count": 2,
   "prices": [
-    { "source": "pso", "product": "petrol", "price_pkr": 299.5, "unit": "litre", "city": null, "effective_date": null, "scraped_at": "2026-07-04T16:21:28.663Z" },
-    { "source": "shell", "product": "hsd", "price_pkr": 309.5, "unit": "litre", "city": null, "effective_date": null, "scraped_at": "2026-07-04T16:21:28.663Z" }
+    {
+      "source": "pso",
+      "product": "petrol",
+      "price_pkr": 299.5,
+      "unit": "litre",
+      "city": null,
+      "effective_date": null,
+      "scraped_at": "2026-07-04T16:21:28.663Z"
+    },
+    {
+      "source": "shell",
+      "product": "hsd",
+      "price_pkr": 309.5,
+      "unit": "litre",
+      "city": null,
+      "effective_date": null,
+      "scraped_at": "2026-07-04T16:21:28.663Z"
+    }
   ]
 }
 ```
@@ -71,10 +85,10 @@ Latest known price for every source/product/city combination.
 curl https://fuel.trackmate.page/api/prices
 ```
 
-| Status | Meaning |
-| --- | --- |
-| `200` | OK |
-| `429` | `rate_limited` — see [Rate limiting](#rate-limiting) |
+| Status | Meaning                                              |
+| ------ | ---------------------------------------------------- |
+| `200`  | OK                                                   |
+| `429`  | `rate_limited` — see [Rate limiting](#rate-limiting) |
 
 ### `GET /api/prices/:source`
 
@@ -88,17 +102,33 @@ curl https://fuel.trackmate.page/api/prices/pso
 {
   "count": 2,
   "prices": [
-    { "source": "pso", "product": "petrol", "price_pkr": 299.5, "unit": "litre", "city": null, "effective_date": null, "scraped_at": "2026-07-04T16:21:28.663Z" },
-    { "source": "pso", "product": "octane_plus", "price_pkr": 340, "unit": "litre", "city": "Karachi", "effective_date": null, "scraped_at": "2026-07-04T16:21:28.663Z" }
+    {
+      "source": "pso",
+      "product": "petrol",
+      "price_pkr": 299.5,
+      "unit": "litre",
+      "city": null,
+      "effective_date": null,
+      "scraped_at": "2026-07-04T16:21:28.663Z"
+    },
+    {
+      "source": "pso",
+      "product": "octane_plus",
+      "price_pkr": 340,
+      "unit": "litre",
+      "city": "Karachi",
+      "effective_date": null,
+      "scraped_at": "2026-07-04T16:21:28.663Z"
+    }
   ]
 }
 ```
 
-| Status | Meaning |
-| --- | --- |
-| `200` | OK |
-| `400` | `invalid_source` — `:source` isn't one of `pso`, `shell`, `pakwheels` |
-| `429` | `rate_limited` |
+| Status | Meaning                                                               |
+| ------ | --------------------------------------------------------------------- |
+| `200`  | OK                                                                    |
+| `400`  | `invalid_source` — `:source` isn't one of `pso`, `shell`, `pakwheels` |
+| `429`  | `rate_limited`                                                        |
 
 ### `GET /api/history?product=petrol&days=30`
 
@@ -114,17 +144,33 @@ curl "https://fuel.trackmate.page/api/history?product=hsd&days=90"
   "count": 2,
   "days": 1,
   "prices": [
-    { "source": "pso", "product": "petrol", "price_pkr": 299.5, "unit": "litre", "city": null, "effective_date": null, "scraped_at": "2026-07-04T16:18:48.887Z" },
-    { "source": "pakwheels", "product": "petrol", "price_pkr": 297.53, "unit": "litre", "city": null, "effective_date": "04-July-2026", "scraped_at": "2026-07-04T16:18:49.736Z" }
+    {
+      "source": "pso",
+      "product": "petrol",
+      "price_pkr": 299.5,
+      "unit": "litre",
+      "city": null,
+      "effective_date": null,
+      "scraped_at": "2026-07-04T16:18:48.887Z"
+    },
+    {
+      "source": "pakwheels",
+      "product": "petrol",
+      "price_pkr": 297.53,
+      "unit": "litre",
+      "city": null,
+      "effective_date": "04-July-2026",
+      "scraped_at": "2026-07-04T16:18:49.736Z"
+    }
   ]
 }
 ```
 
-| Status | Meaning |
-| --- | --- |
-| `200` | OK |
-| `400` | `invalid_source` |
-| `429` | `rate_limited` |
+| Status | Meaning          |
+| ------ | ---------------- |
+| `200`  | OK               |
+| `400`  | `invalid_source` |
+| `429`  | `rate_limited`   |
 
 ### `GET /api/health`
 
@@ -147,10 +193,10 @@ curl https://fuel.trackmate.page/api/health
 }
 ```
 
-| Status | Meaning |
-| --- | --- |
-| `200` | OK |
-| `429` | `rate_limited` |
+| Status | Meaning        |
+| ------ | -------------- |
+| `200`  | OK             |
+| `429`  | `rate_limited` |
 
 ## Rate limiting
 
@@ -196,23 +242,6 @@ scripts/
 `fetch` + regex/text-pattern matching — no headless browser, since all
 sources are either server-rendered or expose a JSON data endpoint.
 
-## How scraping works
-
-Each source has its own scraper, but they share one philosophy: **match on
-the labels/text that carry meaning** ("Petrol (Super)", "PKR", "Rs/Litre",
-city names), not on CSS classes or DOM position. Marketing sites like these
-restyle often; the actual product/price wording changes far less.
-
-Each scraper throws a `ScrapeError` if it can't find what it expects, rather
-than silently returning nothing or garbage. The orchestrator
-(`src/scrapers/index.ts`) runs all three with `Promise.allSettled`, so one
-source breaking (e.g. a redesign) never blocks the other two, and never
-overwrites their last-good data.
-
-Shell in particular renders its price board client-side (an AEM SPA) — the
-scraper reads the same `.model.json` data endpoint the page itself fetches,
-rather than trying to run its JS.
-
 ## Local development
 
 ```bash
@@ -226,44 +255,6 @@ Run a scrape manually:
 ```bash
 bun run scrape
 ```
-
-### Why Turso instead of a local SQLite file?
-
-Heroku's filesystem is **ephemeral** — every dyno restart/cycle (at least
-every 24h) wipes local files, including a `bun:sqlite` database. Turso keeps
-the same SQLite model but persists over the network, so data survives dyno
-restarts. For local development, just omit `TURSO_DATABASE_URL` and it falls
-back to a local `local.db` file.
-
-## Deploying to Heroku
-
-Bun isn't one of Heroku's built-in buildpacks, so add a community Bun
-buildpack alongside your app:
-
-```bash
-heroku buildpacks:add https://github.com/jakeg/heroku-buildpack-bun
-```
-
-Set config vars:
-
-```bash
-heroku config:set TURSO_DATABASE_URL=libsql://your-db.turso.io
-heroku config:set TURSO_AUTH_TOKEN=your-token
-heroku config:set ADMIN_SECRET=$(openssl rand -hex 24)
-```
-
-Add the free **Heroku Scheduler** add-on and configure a job to run every
-6 hours (Scheduler's coarsest interval is hourly, so pick a multiple):
-
-```
-Command: bun run scripts/scrape-once.ts
-```
-
-This runs as a one-off dyno independent of the web dyno's sleep state — a
-`setInterval` inside the web process would stop firing once an eco dyno goes
-to sleep, so we don't rely on one.
-
-Point your domain at the Heroku app (custom domain + DNS CNAME).
 
 ## Ethics / etiquette
 
