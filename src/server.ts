@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { readFile } from "node:fs/promises";
 import { api } from "./api/routes";
 import { rateLimiter } from "./api/rateLimiter";
-import { initSchema, getLastScrapeRun, getLatestPrices } from "./db/schema";
+import { initSchema, getLastScrapeRun, getLatestPrices, logApiRequest } from "./db/schema";
 
 const app = new Hono();
 
@@ -10,6 +10,12 @@ const app = new Hono();
 // Generous enough for normal use/dev poking, tight enough to blunt scraping-of-the-scraper.
 app.use("/api/*", rateLimiter({ capacity: 30, refillPerSecond: 1 }));
 app.route("/api", api);
+
+// Log page views the same way /api/* logs requests, so admin stats cover both.
+app.use("/", async (c, next) => {
+  await next();
+  logApiRequest(c.req.method, c.req.path, c.res.status).catch(() => {});
+});
 
 // Single page: current prices + last-updated + API docs, per the brief.
 app.get("/", async (c) => {

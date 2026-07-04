@@ -44,6 +44,51 @@ export async function initSchema(): Promise<void> {
       failed_sources TEXT NOT NULL
     )
   `);
+
+  // Admin-only usage stats. No IP/user-agent logged — just enough to see
+  // which routes get hit and how often, not who's calling.
+  await db.execute(`
+    CREATE TABLE IF NOT EXISTS api_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      method TEXT NOT NULL,
+      path TEXT NOT NULL,
+      status INTEGER NOT NULL,
+      created_at TEXT NOT NULL
+    )
+  `);
+
+  await db.execute(`
+    CREATE INDEX IF NOT EXISTS idx_api_requests_created_at
+    ON api_requests (created_at)
+  `);
+}
+
+export async function logApiRequest(method: string, path: string, status: number): Promise<void> {
+  await db.execute({
+    sql: `INSERT INTO api_requests (method, path, status, created_at) VALUES (?, ?, ?, ?)`,
+    args: [method, path, status, new Date().toISOString()],
+  });
+}
+
+export async function getApiStats() {
+  const since24h = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+  const since7d = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const [total, last24h, last7d, byPath, byStatus] = await Promise.all([
+    db.execute(`SELECT COUNT(*) as count FROM api_requests`),
+    db.execute({ sql: `SELECT COUNT(*) as count FROM api_requests WHERE created_at >= ?`, args: [since24h] }),
+    db.execute({ sql: `SELECT COUNT(*) as count FROM api_requests WHERE created_at >= ?`, args: [since7d] }),
+    db.execute(`SELECT path, COUNT(*) as count FROM api_requests GROUP BY path ORDER BY count DESC`),
+    db.execute(`SELECT status, COUNT(*) as count FROM api_requests GROUP BY status ORDER BY count DESC`),
+  ]);
+
+  return {
+    total_requests: total.rows[0]?.count ?? 0,
+    last_24h: last24h.rows[0]?.count ?? 0,
+    last_7d: last7d.rows[0]?.count ?? 0,
+    by_path: byPath.rows,
+    by_status: byStatus.rows,
+  };
 }
 
 export async function saveScrapeResults(prices: NormalizedPrice[]): Promise<void> {

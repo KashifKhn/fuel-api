@@ -1,6 +1,6 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
-import { getLatestPrices, getLastScrapeRun, getHistory } from "../db/schema";
+import { getLatestPrices, getLastScrapeRun, getHistory, logApiRequest, getApiStats } from "../db/schema";
 import { runAllScrapers } from "../scrapers";
 import { saveScrapeResults, recordScrapeRun } from "../db/schema";
 import type { Source } from "../scrapers/types";
@@ -10,6 +10,13 @@ export const api = new Hono();
 // Public read API — allow any origin, since this is meant to be used from
 // other people's frontends/apps.
 api.use("/*", cors());
+
+// Admin-only usage stats — no IP/user-agent stored, just method+path+status+when.
+// Fire-and-forget so a slow/failed write never adds latency to the real response.
+api.use("/*", async (c, next) => {
+  await next();
+  logApiRequest(c.req.method, c.req.path, c.res.status).catch(() => {});
+});
 
 const VALID_SOURCES: Source[] = ["pso", "shell", "pakwheels"];
 
@@ -85,4 +92,13 @@ api.post("/admin/refresh", async (c) => {
     failed: summary.failed,
     prices_saved: summary.prices.length,
   });
+});
+
+// Admin-only traffic stats (web page + API). Not linked from anywhere public.
+api.get("/admin/stats", async (c) => {
+  const secret = c.req.header("x-admin-secret");
+  if (!secret || secret !== process.env.ADMIN_SECRET) {
+    return c.json({ error: "unauthorized" }, 401);
+  }
+  return c.json(await getApiStats());
 });
