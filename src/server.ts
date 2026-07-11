@@ -26,9 +26,18 @@ app.get("/", async (c) => {
     .replace("__PRICES_JSON__", JSON.stringify(rows))
     .replace(
       "__LAST_UPDATED__",
-      lastRun ? new Date(lastRun.ran_at as string).toUTCString() : "not yet run",
+      lastRun
+        ? new Date(lastRun.ran_at as string).toLocaleString("en-PK", {
+            timeZone: "Asia/Karachi",
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: true,
+          }).replace(/(\d{2}:\d{2})\s*(am|pm)/i, (_, t, ap) => `${t} ${ap.toUpperCase()}`) + " PKT"
+        : "not yet run",
     );
-
   return c.html(html);
 });
 

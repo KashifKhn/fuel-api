@@ -594,7 +594,7 @@
           <td>${productLabels[g.product] ?? g.product}</td>
           <td>${cityCell}</td>
           <td class="price">Rs. ${Number(g.price_pkr).toFixed(2)}${unit}</td>
-          <td class="muted">${new Date(g.scraped_at).toLocaleString()}</td>
+          <td class="muted">${new Date(g.scraped_at).toLocaleString("en-PK", { timeZone: "Asia/Karachi" }).replace(/(\d{2}:\d{2})\s*(am|pm)/i, (_, t, ap) => `${t} ${ap.toUpperCase()}`)} PKT</td>
         `;
         tbody.appendChild(tr);
 
