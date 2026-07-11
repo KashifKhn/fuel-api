@@ -25,11 +25,11 @@ export class ScrapeError extends Error {
   }
 }
 
-export async function fetchHtml(url: string, source: string): Promise<string> {
+export async function fetchHtml(url: string, source: string, opts?: { json?: boolean }): Promise<string> {
   const res = await fetch(url, {
     headers: {
       "User-Agent": USER_AGENT,
-      Accept: "text/html,application/xhtml+xml",
+      Accept: opts?.json ? "application/json" : "text/html,application/xhtml+xml",
     },
     // Don't hang forever if a source is slow/down — fail fast, keep last good data.
     signal: AbortSignal.timeout(15_000),

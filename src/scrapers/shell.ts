@@ -5,7 +5,7 @@ import type { ScraperResult } from "./types";
 // content is fetched by JS at runtime). The same content is available as
 // structured JSON from AEM's model endpoint, which is what the page itself
 // fetches — so we read that directly instead of trying to run its JS.
-const URL = "https://www.shell.com.pk/motorists/shell-fuels/shell-station-price-board.model.json";
+const URL = "https://www.shell.com.pk/shell-stations/shell-station-price-board.model.json";
 
 /** Recursively collects every string value found under a "text" key in the AEM JSON tree. */
 function collectTextFields(node: unknown, out: string[]): void {
@@ -31,7 +31,7 @@ function collectTextFields(node: unknown, out: string[]): void {
  * break us but a wording change would (and would be loud/obvious in tests).
  */
 export async function scrapeShell(): Promise<ScraperResult> {
-  const json = await fetchHtml(URL, "shell");
+  const json = await fetchHtml(URL, "shell", { json: true });
   const textFields: string[] = [];
   collectTextFields(JSON.parse(json), textFields);
   const text = htmlToText(textFields.join(" "));
